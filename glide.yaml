@@ -1,0 +1,14 @@
+package: github.com/raffaelespazzoli/iscsi-controller
+import:
+- package: github.com/kubernetes-incubator/external-storage
+  version: v2.0.0
+  subpackages:
+  - lib/controller
+- package: github.com/spf13/cobra
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
+- package: github.com/spf13/pflag
+  version: 5ccb023bc27df288a957c5e994cd44fd19619465
+- package: k8s.io/client-go
+  version: 7615377
+  subpackages:
+  - pkg/api/v1
