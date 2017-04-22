@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
 	"github.com/spf13/viper"
@@ -8,6 +9,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	"net/rpc"
 	"net/rpc/jsonrpc"
+	"sort"
 )
 
 var log = logrus.New()
@@ -38,13 +40,23 @@ type export_destroyArgs struct {
 
 type iscsiProvisioner struct {
 	client        *rpc.Client
-	pool          string
 	initiator_wwn string
 }
 
+type export struct {
+	initiator_wwn string
+	lun           int32
+	vol_name      string
+	vol_size      int
+	vol_uuid      string
+	pool          string
+}
+
+type exportList []export
+
 type result int
 
-func NewiscsiProvisioner(url string, pool string, initiator_wwn string) controller.Provisioner {
+func NewiscsiProvisioner(url string, initiator_wwn string) controller.Provisioner {
 
 	initLog()
 	client, err := jsonrpc.Dial("tcp", url)
@@ -56,7 +68,6 @@ func NewiscsiProvisioner(url string, pool string, initiator_wwn string) controll
 
 	return &iscsiProvisioner{
 		client:        client,
-		pool:          pool,
 		initiator_wwn: initiator_wwn,
 	}
 }
@@ -71,6 +82,7 @@ func (p *iscsiProvisioner) Provision(options controller.VolumeOptions) (*v1.Pers
 
 	annotations := make(map[string]string)
 	annotations["volume_name"] = vol
+	annotations["pool"] = options.Parameters["pool"]
 	//	annotations[annExportBlock] = exportBlock
 	//	annotations[annExportID] = strconv.FormatUint(uint64(exportID), 10)
 	//	annotations[annProjectBlock] = projectBlock
@@ -112,12 +124,12 @@ func (p *iscsiProvisioner) Provision(options controller.VolumeOptions) (*v1.Pers
 func (p *iscsiProvisioner) Delete(volume *v1.PersistentVolume) error {
 	//vol from the annotation
 
-	err := p.export_destroy(volume.Annotations["volume_name"])
+	err := p.export_destroy(volume.Annotations["volume_name"], volume.Annotations["pool"])
 	if err != nil {
 		log.Warnln(err)
 		return err
 	}
-	err = p.vol_destroy(volume.GetName())
+	err = p.vol_destroy(volume.GetName(), volume.Annotations["pool"])
 	if err != nil {
 		log.Warnln(err)
 		return err
@@ -137,13 +149,17 @@ func initLog() {
 func (p *iscsiProvisioner) createVolume(options controller.VolumeOptions) (vol string, lun int32, err error) {
 	size := getSize(options)
 	vol = p.getVolumeName(options)
-	lun = p.getNextLun()
-	err = p.vol_create(options.PVName, size)
+	lun, err = p.getFirstAvailableLun()
 	if err != nil {
 		log.Warnln(err)
 		return "", 0, err
 	}
-	err = p.export_create(options.PVName, lun)
+	err = p.vol_create(options.PVName, size, options.Parameters["pool"])
+	if err != nil {
+		log.Warnln(err)
+		return "", 0, err
+	}
+	err = p.export_create(options.PVName, lun, options.Parameters["pool"])
 	if err != nil {
 		log.Warnln(err)
 		return "", 0, err
@@ -152,22 +168,41 @@ func (p *iscsiProvisioner) createVolume(options controller.VolumeOptions) (vol s
 }
 
 func getSize(options controller.VolumeOptions) int64 {
-	return 0
+	return int64(options.PVC.Size())
 }
 
 func (p *iscsiProvisioner) getVolumeName(options controller.VolumeOptions) string {
-	return "ciao"
+	return options.PVName
 }
 
-func (p *iscsiProvisioner) getNextLun() int32 {
-	return 0
+func (p *iscsiProvisioner) getFirstAvailableLun() (int32, error) {
+	exportList, err := p.export_list()
+	if err != nil {
+		log.Warnln(err)
+		return -1, err
+	}
+	if len(exportList) == 255 {
+		return -1, errors.New("255 luns allocated no more luns available")
+	}
+	lun := int32(-1)
+	sort.Sort(exportList)
+	for i, export := range exportList {
+		if i < int(export.lun) {
+			lun = int32(i)
+			break
+		}
+	}
+	if lun == -1 {
+		lun = int32(len(exportList))
+	}
+	return lun, nil
 }
 
 ////// json rpc operations ////
-func (p *iscsiProvisioner) vol_destroy(vol string) error {
+func (p *iscsiProvisioner) vol_destroy(vol string, pool string) error {
 	//make arguments object
 	args := vol_destroyArgs{
-		pool: p.pool,
+		pool: pool,
 		name: vol,
 	}
 	//this will store returned result
@@ -177,10 +212,10 @@ func (p *iscsiProvisioner) vol_destroy(vol string) error {
 	return err
 }
 
-func (p *iscsiProvisioner) export_destroy(vol string) error {
+func (p *iscsiProvisioner) export_destroy(vol string, pool string) error {
 	//make arguments object
 	args := export_destroyArgs{
-		pool:          p.pool,
+		pool:          pool,
 		vol:           vol,
 		initiator_wwn: p.initiator_wwn,
 	}
@@ -191,10 +226,10 @@ func (p *iscsiProvisioner) export_destroy(vol string) error {
 	return err
 }
 
-func (p *iscsiProvisioner) vol_create(name string, size int64) error {
+func (p *iscsiProvisioner) vol_create(name string, size int64, pool string) error {
 	//make arguments object
 	args := vol_createArgs{
-		pool: p.pool,
+		pool: pool,
 		name: name,
 		size: size,
 	}
@@ -205,10 +240,10 @@ func (p *iscsiProvisioner) vol_create(name string, size int64) error {
 	return err
 }
 
-func (p *iscsiProvisioner) export_create(vol string, lun int32) error {
+func (p *iscsiProvisioner) export_create(vol string, lun int32, pool string) error {
 	//make arguments object
 	args := export_createArgs{
-		pool:          p.pool,
+		pool:          pool,
 		vol:           vol,
 		initiator_wwn: p.initiator_wwn,
 		lun:           lun,
@@ -218,4 +253,24 @@ func (p *iscsiProvisioner) export_create(vol string, lun int32) error {
 	//call remote procedure with args
 	err := p.client.Call("export_create", args, &result)
 	return err
+}
+
+func (p *iscsiProvisioner) export_list() (exportList, error) {
+	//this will store returned result
+	var result exportList
+	//call remote procedure with args
+	err := p.client.Call("export_list", nil, &result)
+	return result, err
+}
+
+func (slice exportList) Len() int {
+	return len(slice)
+}
+
+func (slice exportList) Less(i, j int) bool {
+	return slice[i].lun < slice[j].lun
+}
+
+func (slice exportList) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
 }
