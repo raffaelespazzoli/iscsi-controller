@@ -27,8 +27,8 @@ var cfgFile string
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "iscsi-controller",
-	Short: "an iscsi dyamic provisioner for kuberntes",
-	Long: `an iscsi dyamic provisioner for kuberntes.	It requires targetd to be properly installed on the iscsi server`,
+	Short: "an iscsi dynamic provisioner for kubernetes",
+	Long: `an iscsi dynamic provisioner for kubernetes.	It requires targetd to be properly installed on the iscsi server`,
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
