@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
 	"github.com/raffaelespazzoli/iscsi-controller/provisioner"
@@ -68,10 +69,18 @@ to quickly create a Cobra application.`,
 			log.Fatalf("Error getting server version: %v", err)
 		}
 
-		iscsiProvisioner := provisioner.NewiscsiProvisioner(viper.GetString("targetd-url"), viper.GetString("initiator-wwn"))
+		//url := viper.GetString("targetd-scheme") + "://" + viper.GetString("targetd-username") + ":" + viper.GetString("targetd-password") + "@" + viper.GetString("targetd-address") + ":" + viper.GetInt("targetd-port")
+
+		url := fmt.Sprintf("%s://%s:%s@%s:%d/targetrpc", viper.GetString("targetd-scheme"), viper.GetString("targetd-username"), viper.GetString("targetd-password"), viper.GetString("targetd-address"), viper.GetInt("targetd-port"))
+
+		log.Debugln("targed URL", url)
+
+		iscsiProvisioner := provisioner.NewiscsiProvisioner(url, viper.GetString("initiator-wwn"))
+		log.Debugln("iscsi provisioner created")
 		pc := controller.NewProvisionController(kubernetesClientSet, viper.GetDuration("resync-period"), viper.GetString("provisioner-name"), iscsiProvisioner, serverVersion.GitVersion,
 			viper.GetBool("exponential-backoff-on-error"), viper.GetInt("fail-retry-threshold"), viper.GetDuration("lease-period"),
 			viper.GetDuration("renew-deadline"), viper.GetDuration("retry-priod"), viper.GetDuration("term-limit"))
+		log.Debugln("iscsi controller created, running forever...")
 		pc.Run(wait.NeverStop)
 	},
 }
@@ -82,7 +91,7 @@ func init() {
 	viper.BindPFlag("provisioner-name", startcontrollerCmd.Flags().Lookup("provisioner-name"))
 	startcontrollerCmd.Flags().Duration("resync-period", 15*time.Second, "how often to poll the master API for updates")
 	viper.BindPFlag("resync-period", startcontrollerCmd.Flags().Lookup("resync-period"))
-	startcontrollerCmd.Flags().Bool("exponential-backoff-on-error", true, "")
+	startcontrollerCmd.Flags().Bool("exponential-backoff-on-error", true, "exponential-backoff-on-error doubles the retry wait time everytime there is an error")
 	viper.BindPFlag("exponential-backoff-on-error", startcontrollerCmd.Flags().Lookup("exponential-backoff-on-error"))
 	startcontrollerCmd.Flags().Int("fail-retry-threshold", 10, "Threshold for max number of retries on failure of provisioner")
 	viper.BindPFlag("fail-retry-threshold", startcontrollerCmd.Flags().Lookup("fail-retry-threshold"))
@@ -94,10 +103,19 @@ func init() {
 	viper.BindPFlag("retry-priod", startcontrollerCmd.Flags().Lookup("retry-priod"))
 	startcontrollerCmd.Flags().Duration("term-limit", controller.DefaultTermLimit, "TermLimit is the maximum duration that a leader may remain the leader to complete the task before it must give up its leadership. 0 for forever or indefinite.")
 	viper.BindPFlag("term-limit", startcontrollerCmd.Flags().Lookup("term-limit"))
-	startcontrollerCmd.Flags().String("targetd-url", "localhost:18700", "iscsi targetd endpoint url.")
-	viper.BindPFlag("targetd-url", startcontrollerCmd.Flags().Lookup("targetd-url"))
+
 	startcontrollerCmd.Flags().String("initiator-wwn", "openshift-initiator", "World wide name of the initiator")
 	viper.BindPFlag("initiator-wwn", startcontrollerCmd.Flags().Lookup("initiator-wwn"))
+	startcontrollerCmd.Flags().String("targetd-scheme", "http", "scheme of the targetd connection, can be http or https")
+	viper.BindPFlag("targetd-scheme", startcontrollerCmd.Flags().Lookup("targetd-scheme"))
+	startcontrollerCmd.Flags().String("targetd-username", "admin", "username for the targetd connection")
+	viper.BindPFlag("targetd-username", startcontrollerCmd.Flags().Lookup("targetd-username"))
+	startcontrollerCmd.Flags().String("targetd-password", "", "password for the targetd connection")
+	viper.BindPFlag("targetd-password", startcontrollerCmd.Flags().Lookup("targetd-password"))
+	startcontrollerCmd.Flags().String("targetd-address", "localhost", "ip or dns of the targetd server")
+	viper.BindPFlag("targetd-address", startcontrollerCmd.Flags().Lookup("targetd-address"))
+	startcontrollerCmd.Flags().Int("targetd-port", 18700, "port on which targetd is listening")
+	viper.BindPFlag("targetd-port", startcontrollerCmd.Flags().Lookup("targetd-port"))
 
 	// Here you will define your flags and configuration settings.
 

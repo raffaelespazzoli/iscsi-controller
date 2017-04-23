@@ -4,8 +4,8 @@ metadata:
   name: iscsi
 provisioner: iscsi
 parameters:
-  targetPortal: 
-  iqn:
-  iscsiInterface:
-  pool:
+  targetPortal: 192.168.99.100:3260
+  iqn: iqn.2014-06.com.example:remotedisk1
+  iscsiInterface: tcp
+  pool: pool0
   
