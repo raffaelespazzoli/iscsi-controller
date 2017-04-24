@@ -75,7 +75,7 @@ to quickly create a Cobra application.`,
 
 		log.Debugln("targed URL", url)
 
-		iscsiProvisioner := provisioner.NewiscsiProvisioner(url, viper.GetString("initiator-wwn"))
+		iscsiProvisioner := provisioner.NewiscsiProvisioner(url, viper.GetString("initiator-wwn"), viper.GetString("targetd-volume-group"))
 		log.Debugln("iscsi provisioner created")
 		pc := controller.NewProvisionController(kubernetesClientSet, viper.GetDuration("resync-period"), viper.GetString("provisioner-name"), iscsiProvisioner, serverVersion.GitVersion,
 			viper.GetBool("exponential-backoff-on-error"), viper.GetInt("fail-retry-threshold"), viper.GetDuration("lease-period"),
@@ -91,7 +91,7 @@ func init() {
 	viper.BindPFlag("provisioner-name", startcontrollerCmd.Flags().Lookup("provisioner-name"))
 	startcontrollerCmd.Flags().Duration("resync-period", 15*time.Second, "how often to poll the master API for updates")
 	viper.BindPFlag("resync-period", startcontrollerCmd.Flags().Lookup("resync-period"))
-	startcontrollerCmd.Flags().Bool("exponential-backoff-on-error", true, "exponential-backoff-on-error doubles the retry wait time everytime there is an error")
+	startcontrollerCmd.Flags().Bool("exponential-backoff-on-error", true, "exponential-backoff-on-error doubles the retry-period everytime there is an error")
 	viper.BindPFlag("exponential-backoff-on-error", startcontrollerCmd.Flags().Lookup("exponential-backoff-on-error"))
 	startcontrollerCmd.Flags().Int("fail-retry-threshold", 10, "Threshold for max number of retries on failure of provisioner")
 	viper.BindPFlag("fail-retry-threshold", startcontrollerCmd.Flags().Lookup("fail-retry-threshold"))
@@ -116,6 +116,8 @@ func init() {
 	viper.BindPFlag("targetd-address", startcontrollerCmd.Flags().Lookup("targetd-address"))
 	startcontrollerCmd.Flags().Int("targetd-port", 18700, "port on which targetd is listening")
 	viper.BindPFlag("targetd-port", startcontrollerCmd.Flags().Lookup("targetd-port"))
+	startcontrollerCmd.Flags().String("targetd-volume-group", "vg-targetd", "volume group used to create volumes")
+	viper.BindPFlag("targetd-volume-group", startcontrollerCmd.Flags().Lookup("targetd-volume-group"))
 
 	// Here you will define your flags and configuration settings.
 

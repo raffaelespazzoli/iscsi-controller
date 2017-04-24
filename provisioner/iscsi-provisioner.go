@@ -4,10 +4,12 @@ import (
 	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
-	"github.com/powerman/rpc-codec/jsonrpc2"
+	"github.com/raffaelespazzoli/iscsi-controller/provisioner/jsonrpc2"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
+	//"net/rpc"
+	//"net/rpc/jsonrpc"
 	"sort"
 )
 
@@ -40,6 +42,7 @@ type export_destroyArgs struct {
 type iscsiProvisioner struct {
 	targetdURL    string
 	initiator_wwn string
+	volume_group  string
 }
 
 type export struct {
@@ -55,13 +58,14 @@ type exportList []export
 
 type result int
 
-func NewiscsiProvisioner(url, initiator_wwn string) controller.Provisioner {
+func NewiscsiProvisioner(url, initiator_wwn string, volume_group string) controller.Provisioner {
 
 	initLog()
 
 	return &iscsiProvisioner{
 		targetdURL:    url,
 		initiator_wwn: initiator_wwn,
+		volume_group:  volume_group,
 	}
 }
 
@@ -145,20 +149,20 @@ func initLog() {
 func (p *iscsiProvisioner) createVolume(options controller.VolumeOptions) (vol string, lun int32, err error) {
 
 	size := getSize(options)
-	vol = p.getVolumeName(options)
+	vol = p.volume_group + "/" + p.getVolumeName(options)
 	lun, err = p.getFirstAvailableLun()
 	pool := options.Parameters["pool"]
 	if err != nil {
 		log.Warnln(err)
 		return "", 0, err
 	}
-	log.Debugln("creating volume name, size, lun, pool: ", vol, size, lun, pool)
+	log.Debugln("creating volume name, size, pool: ", vol, size, pool)
 	err = p.vol_create(vol, size, pool)
 	if err != nil {
 		log.Warnln(err)
 		return "", 0, err
 	}
-	log.Debugln("created volume name, size, lun, pool: ", vol, size, lun, pool)
+	log.Debugln("created volume name, size, pool: ", vol, size, pool)
 	log.Debugln("exporting volume name, lun pool: ", vol, lun, pool)
 	err = p.export_create(vol, lun, pool)
 	if err != nil {
@@ -170,7 +174,8 @@ func (p *iscsiProvisioner) createVolume(options controller.VolumeOptions) (vol s
 }
 
 func getSize(options controller.VolumeOptions) int64 {
-	return int64(options.PVC.Size())
+	q := options.PVC.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
+	return q.Value()
 }
 
 func (p *iscsiProvisioner) getVolumeName(options controller.VolumeOptions) string {
@@ -200,6 +205,7 @@ func (p *iscsiProvisioner) getFirstAvailableLun() (int32, error) {
 		lun = int32(len(exportList))
 	}
 	return lun, nil
+	//return 0, nil
 }
 
 ////// json rpc operations ////
@@ -330,3 +336,16 @@ func (p *iscsiProvisioner) getConnection() (*jsonrpc2.Client, error) {
 	log.Debugln("targetd client created")
 	return client, nil
 }
+
+//func (p *iscsiProvisioner) getConnection2() (*rpc.Client, error) {
+//	log.Debugln("opening connection to targetd: ", p.targetdURL)
+//
+//	client, err := jsonrpc.Dial("tcp", p.targetdURL)
+//
+//	if err != nil {
+//		log.Warnln(err)
+//		return nil, err
+//	}
+//	log.Debugln("targetd client created")
+//	return client, nil
+//}
