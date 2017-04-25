@@ -62,7 +62,7 @@ sudo systemctl start targetd
 
 do the following for each node
 
-#### install the require packages
+#### install the required packages
 These should be available in a standard openshift installation
 ```
 sudo yum install -y iscsi-initiator-utils
@@ -111,4 +111,21 @@ you can create one with the following command
 
 ```
 oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-dc.yaml
+```
+### test iscsi provisioner
+create a pvc
+```
+oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-pvc.yaml
+```
+verify that the pv has been created
+```
+oc get pv
+```
+you may also want to verify that the volume has been created in you volume group
+```
+targetcli ls
+```
+deploy a pod that uses the pvc
+```
+oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-test-pod.yaml
 ```
