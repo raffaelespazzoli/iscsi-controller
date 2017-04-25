@@ -75,7 +75,7 @@ to quickly create a Cobra application.`,
 
 		log.Debugln("targed URL", url)
 
-		iscsiProvisioner := provisioner.NewiscsiProvisioner(url, viper.GetString("initiator-wwn"), viper.GetString("targetd-pool"))
+		iscsiProvisioner := provisioner.NewiscsiProvisioner(url)
 		log.Debugln("iscsi provisioner created")
 		pc := controller.NewProvisionController(kubernetesClientSet, viper.GetDuration("resync-period"), viper.GetString("provisioner-name"), iscsiProvisioner, serverVersion.GitVersion,
 			viper.GetBool("exponential-backoff-on-error"), viper.GetInt("fail-retry-threshold"), viper.GetDuration("lease-period"),
@@ -103,9 +103,6 @@ func init() {
 	viper.BindPFlag("retry-priod", startcontrollerCmd.Flags().Lookup("retry-priod"))
 	startcontrollerCmd.Flags().Duration("term-limit", controller.DefaultTermLimit, "TermLimit is the maximum duration that a leader may remain the leader to complete the task before it must give up its leadership. 0 for forever or indefinite.")
 	viper.BindPFlag("term-limit", startcontrollerCmd.Flags().Lookup("term-limit"))
-
-	startcontrollerCmd.Flags().String("initiator-wwn", "openshift-initiator", "World wide name of the initiator")
-	viper.BindPFlag("initiator-wwn", startcontrollerCmd.Flags().Lookup("initiator-wwn"))
 	startcontrollerCmd.Flags().String("targetd-scheme", "http", "scheme of the targetd connection, can be http or https")
 	viper.BindPFlag("targetd-scheme", startcontrollerCmd.Flags().Lookup("targetd-scheme"))
 	startcontrollerCmd.Flags().String("targetd-username", "admin", "username for the targetd connection")
@@ -116,8 +113,6 @@ func init() {
 	viper.BindPFlag("targetd-address", startcontrollerCmd.Flags().Lookup("targetd-address"))
 	startcontrollerCmd.Flags().Int("targetd-port", 18700, "port on which targetd is listening")
 	viper.BindPFlag("targetd-port", startcontrollerCmd.Flags().Lookup("targetd-port"))
-	startcontrollerCmd.Flags().String("targetd-pool", "vg-targetd", "volume group used to create volumes")
-	viper.BindPFlag("targetd-pool", startcontrollerCmd.Flags().Lookup("targetd-pool"))
 
 	// Here you will define your flags and configuration settings.
 

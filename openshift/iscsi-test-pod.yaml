@@ -16,4 +16,4 @@ spec:
   volumes:
   - name: iscsi-vol1
     persistentVolumeClaim:
-      claimName: my-claim
+      claimName: myclaim
