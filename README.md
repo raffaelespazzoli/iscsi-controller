@@ -18,6 +18,9 @@ when a pvc request is issued for an iscsi provisioner controlled storage class t
 2. the volume is exported to the first available lun and made accessible to all the configured initiators.
 3. the corresponding pv is created and bound to the pvc. 
 
+
+Each storage class is tied to an iscsi iqn and a volume group. Because an iqn can manage a maximum of 255 luns, each storage class manage at most 255 pvs. iscsi provisioner can manage multiple storage classes.
+
 ## installing the prerequisites
 
 ### configure the iscsi server
