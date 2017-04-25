@@ -19,7 +19,7 @@ spec:
             - name: PROVISIONER_NAME
               value: iscsi
             - name: INITIATOR_WWN
-              value: iqn.2014-06.com.example:desktop0    
+              value: 613358    
             - name: LOG_LEVEL
               value: debug
             - name: TARGETD_USERNAME

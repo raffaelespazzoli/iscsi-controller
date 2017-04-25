@@ -16,56 +16,56 @@ import (
 var log = logrus.New()
 
 type vol_createArgs struct {
-	pool string
-	name string
-	size int64
+	Pool string `json:"pool"`
+	Name string `json:"name"`
+	Size int64  `json:"size"`
 }
 
 type vol_destroyArgs struct {
-	pool string
-	name string
+	Pool string `json:"pool"`
+	Name string `json:"name"`
 }
 
 type export_createArgs struct {
-	pool          string
-	vol           string
-	initiator_wwn string
-	lun           int32
+	Pool          string `json:"pool"`
+	Vol           string `json:"vol"`
+	Initiator_wwn string `json:"initiator_wwn"`
+	Lun           int32  `json:"lun"`
 }
 
 type export_destroyArgs struct {
-	pool          string
-	vol           string
-	initiator_wwn string
+	Pool          string `json:"pool"`
+	Vol           string `json:"vol"`
+	Initiator_wwn string `json:"initiator_wwn"`
 }
 
 type iscsiProvisioner struct {
 	targetdURL    string
 	initiator_wwn string
-	volume_group  string
+	pool          string
 }
 
 type export struct {
-	initiator_wwn string
-	lun           int32
-	vol_name      string
-	vol_size      int
-	vol_uuid      string
-	pool          string
+	Initiator_wwn string `json:"initiator_wwn"`
+	Lun           int32  `json:"lun"`
+	Vol_name      string `json:"vol_name"`
+	Vol_size      int    `json:"vol_size"`
+	Vol_uuid      string `json:"vol_uuid"`
+	Pool          string `json:"pool"`
 }
 
 type exportList []export
 
 type result int
 
-func NewiscsiProvisioner(url, initiator_wwn string, volume_group string) controller.Provisioner {
+func NewiscsiProvisioner(url, initiator_wwn string, pool string) controller.Provisioner {
 
 	initLog()
 
 	return &iscsiProvisioner{
 		targetdURL:    url,
 		initiator_wwn: initiator_wwn,
-		volume_group:  volume_group,
+		pool:          pool,
 	}
 }
 
@@ -81,7 +81,7 @@ func (p *iscsiProvisioner) Provision(options controller.VolumeOptions) (*v1.Pers
 
 	annotations := make(map[string]string)
 	annotations["volume_name"] = vol
-	annotations["pool"] = options.Parameters["pool"]
+	//annotations["pool"] = options.Parameters["pool"]
 	//	annotations[annExportBlock] = exportBlock
 	//	annotations[annExportID] = strconv.FormatUint(uint64(exportID), 10)
 	//	annotations[annProjectBlock] = projectBlock
@@ -110,7 +110,7 @@ func (p *iscsiProvisioner) Provision(options controller.VolumeOptions) (*v1.Pers
 					ISCSIInterface: options.Parameters["iscsiInterface"],
 					Lun:            lun,
 					ReadOnly:       false,
-					FSType:         "zfs",
+					FSType:         "xfs",
 				},
 			},
 		},
@@ -123,18 +123,18 @@ func (p *iscsiProvisioner) Provision(options controller.VolumeOptions) (*v1.Pers
 func (p *iscsiProvisioner) Delete(volume *v1.PersistentVolume) error {
 	//vol from the annotation
 	log.Debugln("volume deletion request received: ", volume.GetName())
-	err := p.export_destroy(volume.Annotations["volume_name"], volume.Annotations["pool"])
+	err := p.export_destroy(volume.Annotations["volume_name"], p.pool)
 	if err != nil {
 		log.Warnln(err)
 		return err
 	}
-	log.Debugln("iscsi export removed: ", volume.GetName(), volume.Annotations["volume_name"], volume.Annotations["pool"])
-	err = p.vol_destroy(volume.Annotations["volume_name"], volume.Annotations["pool"])
+	log.Debugln("iscsi export removed: ", volume.GetName(), volume.Annotations["volume_name"], p.pool)
+	err = p.vol_destroy(volume.Annotations["volume_name"], p.pool)
 	if err != nil {
 		log.Warnln(err)
 		return err
 	}
-	log.Debugln("logical volume removed from volume group: ", volume.GetName(), volume.Annotations["volume_name"], volume.Annotations["pool"])
+	log.Debugln("logical volume removed from volume group: ", volume.GetName(), volume.Annotations["volume_name"], p.pool)
 	return nil
 }
 
@@ -149,9 +149,9 @@ func initLog() {
 func (p *iscsiProvisioner) createVolume(options controller.VolumeOptions) (vol string, lun int32, err error) {
 
 	size := getSize(options)
-	vol = p.volume_group + "/" + p.getVolumeName(options)
+	vol = p.getVolumeName(options)
 	lun, err = p.getFirstAvailableLun()
-	pool := options.Parameters["pool"]
+	pool := p.pool
 	if err != nil {
 		log.Warnln(err)
 		return "", 0, err
@@ -196,7 +196,7 @@ func (p *iscsiProvisioner) getFirstAvailableLun() (int32, error) {
 	lun := int32(-1)
 	sort.Sort(exportList)
 	for i, export := range exportList {
-		if i < int(export.lun) {
+		if i < int(export.Lun) {
 			lun = int32(i)
 			break
 		}
@@ -219,8 +219,8 @@ func (p *iscsiProvisioner) vol_destroy(vol string, pool string) error {
 
 	//make arguments object
 	args := vol_destroyArgs{
-		pool: pool,
-		name: vol,
+		Pool: pool,
+		Name: vol,
 	}
 	//this will store returned result
 	var result result
@@ -240,9 +240,9 @@ func (p *iscsiProvisioner) export_destroy(vol string, pool string) error {
 
 	//make arguments object
 	args := export_destroyArgs{
-		pool:          pool,
-		vol:           vol,
-		initiator_wwn: p.initiator_wwn,
+		Pool:          pool,
+		Vol:           vol,
+		Initiator_wwn: p.initiator_wwn,
 	}
 	//this will store returned result
 	var result result
@@ -262,9 +262,9 @@ func (p *iscsiProvisioner) vol_create(name string, size int64, pool string) erro
 
 	//make arguments object
 	args := vol_createArgs{
-		pool: pool,
-		name: name,
-		size: size,
+		Pool: pool,
+		Name: name,
+		Size: size,
 	}
 	//this will store returned result
 	var result result
@@ -284,10 +284,10 @@ func (p *iscsiProvisioner) export_create(vol string, lun int32, pool string) err
 
 	//make arguments object
 	args := export_createArgs{
-		pool:          pool,
-		vol:           vol,
-		initiator_wwn: p.initiator_wwn,
-		lun:           lun,
+		Pool:          pool,
+		Vol:           vol,
+		Initiator_wwn: p.initiator_wwn,
+		Lun:           lun,
 	}
 	//this will store returned result
 	var result result
@@ -317,7 +317,7 @@ func (slice exportList) Len() int {
 }
 
 func (slice exportList) Less(i, j int) bool {
-	return slice[i].lun < slice[j].lun
+	return slice[i].Lun < slice[j].Lun
 }
 
 func (slice exportList) Swap(i, j int) {

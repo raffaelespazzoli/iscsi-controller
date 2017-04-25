@@ -5,7 +5,7 @@ metadata:
 provisioner: iscsi
 parameters:
   targetPortal: 192.168.99.100:3260
-  iqn: iqn.2014-06.com.example:remotedisk1
+  iqn: iqn.2003-01.org.linux-iscsi.minishift:targetd061409
   iscsiInterface: tcp
   pool: pool0
   

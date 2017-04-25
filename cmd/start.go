@@ -75,7 +75,7 @@ to quickly create a Cobra application.`,
 
 		log.Debugln("targed URL", url)
 
-		iscsiProvisioner := provisioner.NewiscsiProvisioner(url, viper.GetString("initiator-wwn"), viper.GetString("targetd-volume-group"))
+		iscsiProvisioner := provisioner.NewiscsiProvisioner(url, viper.GetString("initiator-wwn"), viper.GetString("targetd-pool"))
 		log.Debugln("iscsi provisioner created")
 		pc := controller.NewProvisionController(kubernetesClientSet, viper.GetDuration("resync-period"), viper.GetString("provisioner-name"), iscsiProvisioner, serverVersion.GitVersion,
 			viper.GetBool("exponential-backoff-on-error"), viper.GetInt("fail-retry-threshold"), viper.GetDuration("lease-period"),
@@ -116,8 +116,8 @@ func init() {
 	viper.BindPFlag("targetd-address", startcontrollerCmd.Flags().Lookup("targetd-address"))
 	startcontrollerCmd.Flags().Int("targetd-port", 18700, "port on which targetd is listening")
 	viper.BindPFlag("targetd-port", startcontrollerCmd.Flags().Lookup("targetd-port"))
-	startcontrollerCmd.Flags().String("targetd-volume-group", "vg-targetd", "volume group used to create volumes")
-	viper.BindPFlag("targetd-volume-group", startcontrollerCmd.Flags().Lookup("targetd-volume-group"))
+	startcontrollerCmd.Flags().String("targetd-pool", "vg-targetd", "volume group used to create volumes")
+	viper.BindPFlag("targetd-pool", startcontrollerCmd.Flags().Lookup("targetd-pool"))
 
 	// Here you will define your flags and configuration settings.
 
