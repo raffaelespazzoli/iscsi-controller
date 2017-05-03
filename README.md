@@ -83,7 +83,7 @@ oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:iscs
 oc adm policy add-cluster-role-to-user system:pv-provisioner-controller system:serviceaccount:iscsi-provisioner:iscsi-provisioner
 oc adm policy add-cluster-role-to-user system:pv-binder-controller system:serviceaccount:iscsi-provisioner:iscsi-provisioner
 oc adm policy add-cluster-role-to-user system:pv-recycler-controller system:serviceaccount:iscsi-provisioner:iscsi-provisioner
-oc secret new-basicauth targetd_account --username=admin --password=ciao
+oc secret new-basicauth targetd-account --username=admin --password=ciao
 oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-dc.yaml
 ```
 ### create a storage class
