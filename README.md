@@ -21,25 +21,89 @@ when a pvc request is issued for an iscsi provisioner controlled storage class t
 
 Each storage class is tied to an iscsi iqn and a volume group. Because an iqn can manage a maximum of 255 luns, each storage class manage at most 255 pvs. iscsi provisioner can manage multiple storage classes.
 
-## installing the prerequisites
+## Installing the prerequisites
 
-### configure the iscsi server
+These instructions should work for RHEL/CentOS 7+ and Fedora 24+.
 
-#### install target
+### Configure the iSCSI server
+
+#### Install targetd and targetcli
+
+Only `targetd` needs to be installed.  However, it's highly recommended
+to also install `targetcli` as it provides a simple user interface for
+looking at the state of the iSCSI system.
 
 ```
 sudo yum install -y targetcli targetd rsyslog
 
 ```
 
-#### configure target
+#### Configure target
+
+Enable and start `target.service`.  This will ensure that iSCSI
+configuration persists through reboot.
 
 ```
 sudo systemctl enable target
 sudo systemctl start target
 ```
 
-#### create a volume group
+#### Configure targetd
+
+First, edit `/etc/targetd/targetd.yaml`.  A working sample
+configuration is provided below:
+
+```
+password: ciao
+
+# defaults below; uncomment and edit
+pool_name: vg-targetd
+user: admin
+ssl: false
+target_name: iqn.2003-01.org.linux-iscsi.minishift:targetd
+```
+
+Next, enable and start `targetd.service`.
+
+```
+sudo systemctl enable targetd
+sudo systemctl start targetd
+```
+
+#### Configure the Firewall
+
+The default configuration requires that port 3260/tcp, 3260/udp and
+18700/tcp be open on the iSCSI server.
+
+If using `firewalld`, 
+
+```
+firewall-cmd --add-service=iscsi-target --permanent
+firewall-cmd --add-port=18700/tcp --permanent 
+firewall-cmd --reload
+```
+
+Otherwise, add the following iptables rules to `/etc/sysconfig/iptables`
+
+```
+TODO
+```
+
+#### Create a Volume Group
+
+This requires an additional dedicated disk or partition to use for the
+volume group.  If that's not possible, see the section on using a
+loopback device.
+
+Assuming that the dedicated block device is `/dev/vdb` and that
+`targetd` is configured to use `vg-targetd`:
+
+```
+pvcreate /dev/vdb
+vgcreate vg-targetd /dev/vdb
+```
+
+#### Create a Volume Group on a Loopback Device
 the volume group should be called `vg-target`, this way you don' have to change any default
 
 here is how you would do it in minishift
@@ -51,28 +115,33 @@ sudo losetup $LOOP disk.img
 sudo vgcreate vg-targetd $LOOP
 ```
 
-#### configure targetd
-
-choose a password for `/etc/target/targetd.yaml`
-
-```
-sudo systemctl enable targetd
-sudo systemctl start targetd
-```
-
-
 ### configure the nodes (iscsi clients)
 
-do the following for each node
+#### Install the iscsi-initiator-utils package
+The `iscsiadm` command is required for all clients.  This is contained in the `iscsi-initiator-utils` command and should be part of the standard RHEL, CentOS or Fedora installation.
 
-#### install the required packages
-These should be available in a standard openshift installation
 ```
 sudo yum install -y iscsi-initiator-utils
 ```
-#### configure the initiator name
 
-edit this file `/etc/iscsi/initiatorname.iscsi` and add an initiator name in each
+#### Configure the Initiator Name
+
+Each node requires a unique initiator name.  USE OF DUPLICATE NAMES
+MAY CAUSE PERFORMANCE ISSUES AND DATA LOSS.
+
+By default, a random initiator name is generated when the
+`iscsi-initiator-utils` package is installed.  This usually unique
+enough, but is not guaranteed.  It's also not very descriptive.
+
+To set a custom initiator name, edit the `/etc/iscsi/initiatorname.iscsi` file:
+
+```
+InitiatorName=iqn.2017-04.com.example:node1
+```
+
+In the above example, the initiator name is set to `iqn.2017-04.com.example:node1`
+
+After changing the initiator name, restart `iscsid.service`. CFH---is this needed?
 
 ### install the iscsi provisioner pod
 run the following commands. The secret correspond to username and password you have chosen for targetd (admin is the default for the username)
