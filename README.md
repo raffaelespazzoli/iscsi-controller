@@ -5,7 +5,7 @@ iscsi provisioner is a out of tree provisioner for iscsi storage for Kubernetes 
 
 iscsi provisioner has the following prerequisistes:
 
-1. an iscsi server managed by `targetcli`
+1. an iscsi server managed by `targetd`
 2. all the openshift nodes correclty configured to communicate with the iscsi server
 3. targetd installed on the iscsi server and correclty configured
 4. sufficient disk space available as volume group (vg are the only supported backing storage at the momment)
