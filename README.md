@@ -12,15 +12,18 @@ iscsi provisioner has the following prerequisistes:
 1. an iSCSI server managed by `targetd`
 2. all the openshift nodes correclty configured to communicate with the iSCSI server
 3. targetd installed on the iSCSI server and correclty configured
-4. sufficient disk space available as volume group (vg are the only supported backing storage at the momment)
+4. sufficient disk space available as LVM2 volume group (vg are the only supported backing storage at the momment)
 
 ## how it works
 
-when a pvc request is issued for an iscsi provisioner controlled storage class the following happens:
+when a pvc request is issued for an iscsi provisioner controlled
+storage class the following happens:
 
-1. a new volume in the configured volume group is created, the size of the volume corresponds to the size requested in the pvc
-2. the volume is exported to the first available lun and made accessible to all the configured initiators.
-3. the corresponding pv is created and bound to the pvc. 
+1. a new volume in the configured volume group is created, the size of
+the volume corresponds to the size requested in the pvc
+2. the volume is exported to the first available lun and made
+accessible to all the configured initiators.
+3. the corresponding pv is created and bound to the pvc.
 
 
 Each storage class is tied to an iSCSI target and a volume
