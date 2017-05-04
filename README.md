@@ -118,7 +118,10 @@ sudo vgcreate vg-targetd $LOOP
 ### configure the nodes (iscsi clients)
 
 #### Install the iscsi-initiator-utils package
-The `iscsiadm` command is required for all clients.  This is contained in the `iscsi-initiator-utils` command and should be part of the standard RHEL, CentOS or Fedora installation.
+
+The `iscsiadm` command is required for all clients.  This is provided
+by the `iscsi-initiator-utils` package and should be part of the
+standard RHEL, CentOS or Fedora installation.
 
 ```
 sudo yum install -y iscsi-initiator-utils
