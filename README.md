@@ -11,8 +11,7 @@ iscsi provisioner has the following prerequisistes:
 
 1. an iSCSI server managed by `targetd`
 2. all the openshift nodes correclty configured to communicate with the iSCSI server
-3. targetd installed on the iSCSI server and correclty configured
-4. sufficient disk space available as LVM2 volume group (vg are the only supported backing storage at the momment)
+3. sufficient disk space available as LVM2 volume group (vg are the only supported backing storage at the momment)
 
 ## how it works
 
