@@ -9,9 +9,9 @@ iSCSI storage on a remote server.
 
 iscsi provisioner has the following prerequisistes:
 
-1. an iscsi server managed by `targetd`
-2. all the openshift nodes correclty configured to communicate with the iscsi server
-3. targetd installed on the iscsi server and correclty configured
+1. an iSCSI server managed by `targetd`
+2. all the openshift nodes correclty configured to communicate with the iSCSI server
+3. targetd installed on the iSCSI server and correclty configured
 4. sufficient disk space available as volume group (vg are the only supported backing storage at the momment)
 
 ## how it works
@@ -23,7 +23,10 @@ when a pvc request is issued for an iscsi provisioner controlled storage class t
 3. the corresponding pv is created and bound to the pvc. 
 
 
-Each storage class is tied to an iscsi iqn and a volume group. Because an iqn can manage a maximum of 255 luns, each storage class manage at most 255 pvs. iscsi provisioner can manage multiple storage classes.
+Each storage class is tied to an iSCSI target and a volume
+group. Because an target can manage a maximum of 255 LUNs, each
+storage class manage at most 255 pvs. iscsi provisioner can manage
+multiple storage classes.
 
 ## Installing the prerequisites
 
