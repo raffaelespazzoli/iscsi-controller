@@ -1,5 +1,9 @@
 # iscsi provisioner 
-iscsi provisioner is a out of tree provisioner for iscsi storage for Kubernetes and OpenShift.
+
+iscsi provisioner is a out of tree provisioner for iSCSI storage for
+Kubernetes and OpenShift.  The provisioniner uses the API provided by
+[targetd](https://github.com/open-iscsi/targetd) to create and export
+iSCSI storage on a remote server.
 
 ## Prerequisites
 
