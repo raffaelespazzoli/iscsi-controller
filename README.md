@@ -25,6 +25,23 @@ Each storage class is tied to an iscsi iqn and a volume group. Because an iqn ca
 
 These instructions should work for RHEL/CentOS 7+ and Fedora 24+.
 
+### A note about names
+
+In various places, iSCSI Qualified Names (IQNs) need to be created.
+These need to be unique.  So every target must have it's own unique
+IQN, and every client (initiator) must have its own IQN.
+
+IF NON-UNIQUE IQNs ARE USED, THEN THERE IS A POTENTIAL FOR DATA LOSS
+AND BAD PERFORMANCE!
+
+IQNs have a specific format:
+
+iqn.YEAR-MM.com.example.blah:tag
+
+See the [wikipedia
+article](https://en.wikipedia.org/wiki/ISCSI#Addressing) for more
+information.
+
 ### Configure the iSCSI server
 
 #### Install targetd and targetcli
