@@ -46,6 +46,41 @@ See the [wikipedia
 article](https://en.wikipedia.org/wiki/ISCSI#Addressing) for more
 information.
 
+### Configure Storage
+
+Before configuring the iSCSI server, it needs to have storage
+configured.  `targetd` uses LVM to provision storage.
+
+If possible, it's best to have a dedicated disk or partition that can
+be configured as a volume group.  However, if this is not possible, a
+loopback device can be used to simulate a dedicated block device.
+
+#### Create a Volume Group with a dedicated disk or partition
+
+This requires an additional dedicated disk or partition to use for the
+volume group.  If that's not possible, see the section on using a
+loopback device.
+
+Assuming that the dedicated block device is `/dev/vdb` and that
+`targetd` is configured to use `vg-targetd`:
+
+```
+pvcreate /dev/vdb
+vgcreate vg-targetd /dev/vdb
+```
+
+#### Create a Volume Group on a Loopback Device
+the volume group should be called `vg-target`, this way you don' have to change any default
+
+here is how you would do it in minishift
+```
+cd /var/lib/minishift
+sudo dd if=/dev/zero of=disk.img bs=1G count=2
+export LOOP=`losetup -f`
+sudo losetup $LOOP disk.img
+sudo vgcreate vg-targetd $LOOP
+```
+
 ### Configure the iSCSI server
 
 #### Install targetd and targetcli
@@ -110,32 +145,6 @@ Otherwise, add the following iptables rules to `/etc/sysconfig/iptables`
 TODO
 ```
 
-#### Create a Volume Group
-
-This requires an additional dedicated disk or partition to use for the
-volume group.  If that's not possible, see the section on using a
-loopback device.
-
-Assuming that the dedicated block device is `/dev/vdb` and that
-`targetd` is configured to use `vg-targetd`:
-
-```
-pvcreate /dev/vdb
-vgcreate vg-targetd /dev/vdb
-```
-
-#### Create a Volume Group on a Loopback Device
-the volume group should be called `vg-target`, this way you don' have to change any default
-
-here is how you would do it in minishift
-```
-cd /var/lib/minishift
-sudo dd if=/dev/zero of=disk.img bs=1G count=2
-export LOOP=`losetup -f`
-sudo losetup $LOOP disk.img
-sudo vgcreate vg-targetd $LOOP
-```
-
 ### configure the nodes (iscsi clients)
 
 #### Install the iscsi-initiator-utils package
@@ -174,6 +183,7 @@ systemctl restart iscsid
 ```
 
 ### install the iscsi provisioner pod
+
 run the following commands. The secret correspond to username and password you have chosen for targetd (admin is the default for the username)
 ```
 oc new-project iscsi-provisioner
