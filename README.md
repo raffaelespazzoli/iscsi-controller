@@ -136,15 +136,21 @@ By default, a random initiator name is generated when the
 `iscsi-initiator-utils` package is installed.  This usually unique
 enough, but is not guaranteed.  It's also not very descriptive.
 
-To set a custom initiator name, edit the `/etc/iscsi/initiatorname.iscsi` file:
+To set a custom initiator name, edit the initiatorname.iscsi file in
+/etc/iscsi:
 
 ```
 InitiatorName=iqn.2017-04.com.example:node1
 ```
 
-In the above example, the initiator name is set to `iqn.2017-04.com.example:node1`
+In the above example, the initiator name is set to
+`iqn.2017-04.com.example:node1`.
 
-After changing the initiator name, restart `iscsid.service`. CFH---is this needed?
+After changing the initiator name, restart `iscsid.service`.
+
+```
+systemctl restart iscsid
+```
 
 ### install the iscsi provisioner pod
 run the following commands. The secret correspond to username and password you have chosen for targetd (admin is the default for the username)
