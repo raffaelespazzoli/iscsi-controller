@@ -13,7 +13,7 @@ iscsi provisioner has the following prerequisistes:
 2. all the openshift nodes correclty configured to communicate with the iSCSI server
 3. sufficient disk space available as LVM2 volume group (vg are the only supported backing storage at the momment)
 
-## how it works
+## How it works
 
 when a pvc request is issued for an iscsi provisioner controlled
 storage class the following happens:
@@ -112,7 +112,7 @@ sudo systemctl start target
 
 #### Configure targetd
 
-First, edit `/etc/targetd/targetd.yaml`.  A working sample
+First, edit `/etc/target/targetd.yaml`.  A working sample
 configuration is provided below:
 
 ```
@@ -151,7 +151,7 @@ Otherwise, add the following iptables rules to `/etc/sysconfig/iptables`
 TODO
 ```
 
-### configure the nodes (iscsi clients)
+### Configure the nodes (iscsi clients)
 
 #### Install the iscsi-initiator-utils package
 
@@ -172,8 +172,7 @@ By default, a random initiator name is generated when the
 `iscsi-initiator-utils` package is installed.  This usually unique
 enough, but is not guaranteed.  It's also not very descriptive.
 
-To set a custom initiator name, edit the initiatorname.iscsi file in
-/etc/iscsi:
+To set a custom initiator name, edit the file `/etc/iscsi/initiatorname.iscsi`:
 
 ```
 InitiatorName=iqn.2017-04.com.example:node1
@@ -185,10 +184,10 @@ In the above example, the initiator name is set to
 After changing the initiator name, restart `iscsid.service`.
 
 ```
-systemctl restart iscsid
+sudo systemctl restart iscsid
 ```
 
-### install the iscsi provisioner pod
+### Install the iscsi provisioner pod
 
 run the following commands. The secret correspond to username and password you have chosen for targetd (admin is the default for the username)
 ```
@@ -201,7 +200,7 @@ oc adm policy add-cluster-role-to-user system:pv-recycler-controller system:serv
 oc secret new-basicauth targetd-account --username=admin --password=ciao
 oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-dc.yaml
 ```
-### create a storage class
+### Create a storage class
 storage classes should look like the following
 ```
 kind: StorageClass
@@ -223,14 +222,14 @@ parameters:
 # volumeGroup: vg-targetd
 
 # this is a comma separated list of initiators that will be give access to the created volumes, they must correspond to what you have configured in your nodes.
-  initiators: iqn.2014-06.com.example:desktop0 
+  initiators: iqn.2017-04.com.example:node1 
 ```
 you can create one with the following command
 
 ```
-oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-dc.yaml
+oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-class.yaml
 ```
-### test iscsi provisioner
+### Test iscsi provisioner
 create a pvc
 ```
 oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-pvc.yaml
