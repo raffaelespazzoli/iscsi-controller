@@ -1,0 +1,49 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: iscsi-targetd
+  labels:
+    app: iscsi-targetd
+spec:
+  ports:
+    - name: target
+      port: 3260
+    - name: targetd
+      port: 18700
+  selector:
+    app: nfs-provisioner
+---
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: iscsi-targetd
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: iscsi-targetd
+    spec:
+      containers:
+        - name: iscsi-targetd
+          imagePullPolicy: Always
+          image: raffaelespazzoli/iscsi-targetd:0.0.1
+          ports:
+            - name: target
+              containerPort: 3260
+            - name: targetd
+              containerPort: 18700          
+          env:
+            - name: container
+              value: docker
+          volumeMounts:
+            - mountPath: /sys/fs/cgroup
+              name: cgroup
+      volumes:
+        - hostPath:
+            path: /sys/fs/cgroup
+          name: cgroup  
+        - hostPath:
+            path: /proc
+          name: proc                                                                              
+      serviceAccount: iscsi-targetd   

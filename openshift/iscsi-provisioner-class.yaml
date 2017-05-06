@@ -17,6 +17,6 @@ parameters:
 # volumeGroup: vg-targetd
 
 # this is a comma separated list of initiators that will be give access to the created volumes, they must correspond to what you have configured in your nodes.
-  initiators: iqn.2014-06.com.example:desktop0 
+  initiators: iqn.2014-06.com.example:desktop0,iqn.2014-06.com.example:desktop1
 
   

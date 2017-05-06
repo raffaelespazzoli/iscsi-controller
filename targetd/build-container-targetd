@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+docker build -t raffaelespazzoli/iscsi-targetd:0.0.1 -f ./Dockerfile.fedora .

@@ -28,7 +28,7 @@ Each storage class is tied to an iscsi iqn and a volume group. Because an iqn ca
 #### install target
 
 ```
-sudo yum install -y targetcli targetd rsyslog
+sudo yum install -y targetcli targetd
 
 ```
 
@@ -46,7 +46,7 @@ here is how you would do it in minishift
 ```
 cd /var/lib/minishift
 sudo dd if=/dev/zero of=disk.img bs=1G count=2
-export LOOP=`losetup -f`
+export LOOP=`sudo losetup -f`
 sudo losetup $LOOP disk.img
 sudo vgcreate vg-targetd $LOOP
 ```

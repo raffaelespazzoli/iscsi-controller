@@ -1,0 +1,24 @@
+FROM fedora:latest
+LABEL authors="Raffaele Spazzoli <rspazzol@redhat.com>" 
+
+RUN INSTALL_PKGS="targetcli targetd python3-lvm lvm2" && \
+    dnf -y update && \
+    dnf install -y 'dnf-command(copr)' && \
+    dnf copr enable -y xlark/targetd-latest && \
+    dnf install -y  $INSTALL_PKGS && \
+    dnf clean all && \
+    #systemctl mask systemd-remount-fs.service dev-hugepages.mount sys-fs-fuse-connections.mount systemd-logind.service getty.target console-getty.service && \
+    systemctl enable target && \
+    systemctl enable targetd
+    
+
+# RUN cp /usr/lib/systemd/system/dbus.service /etc/systemd/system/; sed -i 's/OOMScoreAdjust=-900//' /etc/systemd/system/dbus.service
+
+ENV container=docker
+
+EXPOSE 3260 18700
+
+VOLUME ["/run", "/tmp", "/iscsi-volume"]
+
+#CMD [ "/sbin/init", "--log-target=console", "--default-standard-output=syslog+console", "--default-standard-error=syslog+console" ]    
+CMD [ "/sbin/init" ]    
